@@ -1,0 +1,47 @@
+function gameLoop() {
+        // Очистка экрана
+        ctx.fillStyle = "#141428";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Линия земли
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, GROUND_Y);
+        ctx.lineTo(canvas.width, GROUND_Y);
+        ctx.stroke();
+
+        // Обновление и отрисовка игрока
+        player.update();
+        player.draw();
+
+        // Препятствия
+        for (let i = 0; i < obstacles.length; i++) {
+            obstacles[i].update();
+            obstacles[i].draw();
+
+            // Перенос препятствия вперед при уходе за экран
+            if (obstacles[i].x < -50) {
+                let maxX = Math.max(...obstacles.map(o => o.x));
+                obstacles[i].x = maxX + 350;
+                score += 1;
+            }
+
+            // Столкновение
+            if (checkCollision(player, obstacles[i])) {
+                resetGame();
+            }
+        }
+
+        // Счет
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "24px sans-serif";
+        ctx.fillText("Score: " + score, 20, 40);
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
