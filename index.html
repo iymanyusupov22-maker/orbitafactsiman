@@ -1,47 +1,102 @@
-function gameLoop() {
-        // Очистка экрана
-        ctx.fillStyle = "#141428";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Орбита Имана — мой сайт про космос</title>
+<meta name="description" content="Орбита Имана: личный сайт про космос, планеты, звёзды и интересные факты о Вселенной.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪐</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Onest:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --space: #0f1838;
+    --deep: #0a1128;
+    --ice: #dce6ff;
+    --mute: #93a3d1;
+    --sun: #ffcf5c;
+    --line: #2a3a70;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: radial-gradient(ellipse at 50% 0%, #1a2a5e 0%, var(--space) 45%, var(--deep) 100%);
+    background-attachment: fixed;
+    color: var(--ice);
+    font-family: "Onest", system-ui, sans-serif;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+  h1, h2 { font-family: "Unbounded", "Onest", sans-serif; font-weight: 700; line-height: 1.15; }
+  a { color: var(--sun); }
+  :focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
 
-        // Линия земли
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(0, GROUND_Y);
-        ctx.lineTo(canvas.width, GROUND_Y);
-        ctx.stroke();
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
 
-        // Обновление и отрисовка игрока
-        player.update();
-        player.draw();
+  .hero { min-height: 100vh; display: grid; align-content: center; justify-items: center; text-align: center; padding: 48px 24px; gap: 40px; }
+  .system { position: relative; width: min(78vw, 420px); aspect-ratio: 1; }
+  .sun { position: absolute; inset: 41%; border-radius: 50%; background: var(--sun); box-shadow: 0 0 60px 18px rgba(255, 207, 92, .35); }
+  .ring { position: absolute; border: 1px solid var(--line); border-radius: 50%; animation: spin linear infinite; }
+  .ring i { position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; }
+  .r1 { inset: 28%; animation-duration: 9s; }  .r1 i { background: #ff8a5c; width: 10px; height: 10px; top: -5px; margin-left: -5px; }
+  .r2 { inset: 14%; animation-duration: 18s; } .r2 i { background: #5cc8ff; }
+  .r3 { inset: 0;   animation-duration: 32s; } .r3 i { background: #b69cff; width: 18px; height: 18px; top: -9px; margin-left: -9px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-        // Препятствия
-        for (let i = 0; i < obstacles.length; i++) {
-            obstacles[i].update();
-            obstacles[i].draw();
+  .hero h1 { font-size: clamp(2.2rem, 7vw, 4rem); }
+  .hero p { color: var(--mute); max-width: 34ch; margin: 16px auto 0; }
+  .btn { display: inline-block; margin-top: 28px; padding: 14px 26px; border-radius: 999px; background: var(--sun); color: #1a1a2e; font-weight: 500; text-decoration: none; }
+  .btn:hover { background: #ffdc85; }
 
-            // Перенос препятствия вперед при уходе за экран
-            if (obstacles[i].x < -50) {
-                let maxX = Math.max(...obstacles.map(o => o.x));
-                obstacles[i].x = maxX + 350;
-                score += 1;
-            }
+  section { padding: 72px 0; }
+  h2 { font-size: clamp(1.5rem, 4vw, 2.2rem); margin-bottom: 32px; }
+  .facts { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .fact { border-left: 3px solid var(--sun); padding: 4px 0 4px 18px; }
+  .fact b { display: block; font-family: "Unbounded", "Onest", sans-serif; font-weight: 500; font-size: 1.05rem; margin-bottom: 6px; }
+  .fact span { color: var(--mute); font-size: .95rem; }
+  .about p { max-width: 62ch; color: var(--ice); }
+  footer { padding: 40px 0 56px; color: var(--mute); font-size: .9rem; border-top: 1px solid var(--line); }
 
-            // Столкновение
-            if (checkCollision(player, obstacles[i])) {
-                resetGame();
-            }
-        }
+  @media (prefers-reduced-motion: reduce) { .ring { animation: none; } html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
 
-        // Счет
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "24px sans-serif";
-        ctx.fillText("Score: " + score, 20, 40);
+<header class="hero">
+  <div class="system" role="img" aria-label="Солнце и три планеты на орбитах">
+    <div class="ring r3"><i></i></div>
+    <div class="ring r2"><i></i></div>
+    <div class="ring r1"><i></i></div>
+    <div class="sun"></div>
+  </div>
+  <div>
+    <h1>Орбита Имана</h1>
+    <p>Мой сайт про космос, звёзды и всё, что находится за пределами Земли.</p>
+    <a class="btn" href="#facts">Читать факты</a>
+  </div>
+</header>
 
-        requestAnimationFrame(gameLoop);
-    }
+<main class="wrap">
+  <section id="facts">
+    <h2>Факты о космосе</h2>
+    <div class="facts">
+      <div class="fact"><b>Свет Солнца</b><span>Идёт до Земли около 8 минут 20 секунд. Мы видим Солнце таким, каким оно было чуть более 8 минут назад.</span></div>
+      <div class="fact"><b>Сутки на Венере</b><span>Они длиннее её года: планета делает оборот вокруг оси за 243 земных суток, а вокруг Солнца за 225.</span></div>
+      <div class="fact"><b>Звёзды Млечного Пути</b><span>В нашей галактике сотни миллиардов звёзд, и у многих из них есть свои планеты.</span></div>
+      <div class="fact"><b>Нейтронные звёзды</b><span>Чайная ложка их вещества весила бы миллиарды тонн.</span></div>
+    </div>
+  </section>
 
-    requestAnimationFrame(gameLoop);
-</script>
+  <section class="about" id="about">
+    <h2>Обо мне</h2>
+    <p>Меня зовут Иман, и мне интересен космос. Этот сайт я делаю вместе с Claude: придумываю идеи, а он помогает превратить их в страницу. Здесь будут появляться новые факты и мои любимые темы.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Орбита Имана, 2026</div>
+</footer>
+
 </body>
 </html>
